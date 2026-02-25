@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pizzaria Santos - Inhumas</title>
+    <style>
+        :root { --verde: #009246; --branco: #ffffff; --vermelho: #ce2b37; --dark: #1a1a1a; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 0; background: #f4f4f4; color: var(--dark); }
+        .top-bar { height: 10px; background: linear-gradient(90deg, var(--verde) 33.3%, var(--branco) 33.3%, var(--branco) 66.6%, var(--vermelho) 66.6%); position: fixed; top: 0; width: 100%; z-index: 1001; }
+        .status-loja { padding: 10px; font-size: 13px; font-weight: bold; text-align: center; margin-top: 40px; }
+        .aberto { background: #d4edda; color: #155724; }
+        .fechado { background: #f8d7da; color: #721c24; }
+        .container { max-width: 600px; margin: 0 auto; padding: 15px; padding-bottom: 140px; }
+        .header { text-align: center; margin-bottom: 20px; }
+        .header img { max-width: 110px; border-radius: 50%; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .header h1 { color: var(--vermelho); margin: 10px 0 0; }
+        .section-title { background: var(--verde); color: white; padding: 10px; border-radius: 8px; margin: 20px 0 10px; font-size: 13px; font-weight: bold; text-transform: uppercase; }
+        .entrega-options { display: flex; gap: 8px; }
+        .btn-tipo { flex: 1; padding: 15px; border: 2px solid #ddd; border-radius: 12px; background: white; font-weight: bold; cursor: pointer; }
+        .btn-tipo.ativo { border-color: var(--vermelho); color: var(--vermelho); background: #fff5f5; }
+        .pizzaBox { background: white; border-radius: 15px; padding: 15px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); border: 1px solid #ddd; }
+        .divisor-pizzas { display: flex; gap: 5px; margin: 10px 0; }
+        .btn-div { flex: 1; padding: 10px; font-size: 12px; border: 1px solid #ddd; border-radius: 8px; background: #f9f9f9; cursor: pointer; font-weight: bold; }
+        .btn-div.ativo { background: var(--vermelho); color: white; border-color: var(--vermelho); }
+        .sabor-box { margin-bottom: 10px; }
+        .sabor-box label { font-size: 12px; font-weight: bold; color: #666; display: block; margin-bottom: 4px; }
+        .desc-sabor { background: #fff9e6; font-size: 11px; color: #555; padding: 6px; border-radius: 6px; margin: 4px 0 8px; display: none; border-left: 3px solid var(--vermelho); }
+        .borda-area { background: #f0fdf4; padding: 12px; border-radius: 10px; margin-top: 15px; border: 1px dashed var(--verde); }
+        .bebida-item { background: white; padding: 10px; margin-bottom: 8px; border-radius: 10px; border: 1px solid #ddd; }
+        .bebida-flex { display: flex; justify-content: space-between; align-items: center; }
+        .bebida-item input { width: 55px; text-align: center; padding: 8px; }
+        select, input, textarea { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ccc; font-size: 16px; box-sizing: border-box; margin-bottom: 10px; }
+        .footer-total { position: fixed; bottom: 0; left: 0; right: 0; background: white; padding: 15px; box-shadow: 0 -5px 15px rgba(0,0,0,0.1); z-index: 1000; }
+        .btn-enviar { background: #25d366; color: white; border: none; width: 100%; max-width: 500px; padding: 18px; border-radius: 50px; font-size: 18px; font-weight: bold; display: flex; justify-content: space-between; margin: 0 auto; cursor: pointer; }
+        #campo-troco { display: none; }
+    </style>
+</head>
+<body>
+
+<div class="top-bar"></div>
+<div id="status-loja" class="status-loja">Verificando...</div>
+
+<div class="container">
+    <div class="header">
+        <img src="logo.png" alt="Pizzaria Santos" onerror="this.src='https://cdn-icons-png.flaticon.com/512/5973/5973307.png'">
+        <h1>Pizzaria Santos</h1>
+    </div>
+
+    <div class="section-title">🛵 Entrega ou Retirada?</div>
+    <div class="entrega-options">
+        <button id="btn-entrega" class="btn-tipo ativo" onclick="mudarTipoPedido('Entrega')">🛵 ENTREGA</button>
+        <button id="btn-retirada" class="btn-tipo" onclick="mudarTipoPedido('Retirada')">🏬 RETIRADA</button>
+    </div>
+    <div id="taxa-info" style="font-size:12px; color:var(--vermelho); font-weight:bold; margin-top:5px;">Taxa: R$ 7,00</div>
+
+    <div class="section-title">📦 1. Quantas Pizzas?</div>
+    <input type="number" id="quantidadePizzas" value="1" min="1" onchange="gerarPizzas(); calcularTotal();">
+    <div id="pizzasContainer"></div>
+
+    <div class="section-title">🥤 2. Bebidas</div>
+    <div class="bebida-item">
+        <div class="bebida-flex"><span>Coca-Cola 2L (R$ 13)</span><input type="number" class="refri" data-n="Coca-Cola 2L" data-p="13" value="0" min="0" onchange="calcularTotal()"></div>
+        <select class="refri-detalhe"><option>Tradicional</option><option>Sem Açúcar</option></select>
+    </div>
+
+    <div class="bebida-item">
+        <div class="bebida-flex"><span>Jáo Sabores (R$ 7)</span><input type="number" class="refri" data-n="Jáo" data-p="7" value="0" min="0" onchange="calcularTotal()"></div>
+        <select class="refri-detalhe">
+            <option>Guaraná</option><option>Laranja</option><option>Uva</option><option>Cola</option><option>Limão</option><option>Tubaína</option>
+        </select>
+    </div>
+
+    <div class="section-title">💳 3. Pagamento</div>
+    <select id="pagamento" onchange="toggleTroco(); calcularTotal();">
+        <option value="Pix">Pix</option>
+        <option value="Dinheiro">Dinheiro</option>
+        <option value="Debito">Débito (+ R$ 1,00)</option>
+        <option value="Credito">Crédito (+ R$ 2,00)</option>
+    </select>
+    <div id="campo-troco"><input type="text" id="troco" placeholder="Troco para quanto?"></div>
+
+    <div class="section-title">📍 4. Dados</div>
+    <input type="text" id="nome" placeholder="Seu Nome">
+    <div id="campo-endereco">
+        <textarea id="endereco" placeholder="Endereço (Rua, Nº, Bairro)" rows="2"></textarea>
+    </div>
+    <textarea id="obs" placeholder="Observações?" rows="1"></textarea>
+</div>
+
+<div class="footer-total">
+    <button class="btn-enviar" onclick="enviarPedido()">
+        <span>ENVIAR PEDIDO</span>
+        <span id="txtTotal">R$ 0,00</span>
+    </button>
+</div>
+
+<script>
+    let tipoPedido = 'Entrega';
+    const menu = {
+        "Tradicionais": {
+            "À Moda da Casa ⭐": "Mussarela, presunto, calabresa, frango, milho, tomate e bacon",
+            "Bacon": "Mussarela, bacon e orégano",
+            "Calabresa": "Mussarela, calabresa, cebola e orégano",
+            "Frango com Catupiry": "Mussarela, frango, catupiry e orégano",
+            "Portuguesa": "Mussarela, presunto, calabresa, cebola, pimentão, ovos, azeitona e orégano",
+            "Bauru": "Mussarela, presunto, tomate e orégano",
+            "Palmito": "Mussarela, palmito, tomate e orégano",
+            "Americana": "Mussarela, presunto, bacon, ovo e orégano"
+        },
+        "Especiais": {
+            "Bacon Especial ⭐": "Mussarela, bacon, catupiry e orégano",
+            "Calabresa Especial ⭐": "Mussarela, calabresa, cheddar, bacon e orégano",
+            "Frango Especial ⭐": "Mussarela, frango, cheddar, bacon e orégano",
+            "Strogonoff de Frango": "Mussarela, frango, creme de leite, batata palha e orégano",
+            "4 Queijos": "Mussarela, provolone, cheddar, catupiry e orégano",
+            "Suprema": "Mussarela, frango, calabresa, bacon, milho, catupiry e orégano",
+            "Carne Seca Especial": "Mussarela, carne seca desfiada, cebola roxa, catupiry e orégano",
+            "Strogonoff de Carne Seca": "Mussarela, carne seca, creme de leite, batata palha e orégano"
+        },
+        "Doces": {
+            "Ovomaltine": "Mussarela, chocolate, creme de leite e Ovomaltine",
+            "Chocolate": "Mussarela, chocolate e creme de leite",
+            "Sonho de Valsa": "Mussarela, chocolate, creme de leite e Sonho de Valsa",
+            "Brigadeiro": "Mussarela, chocolate e brigadeiro",
+            "Romeu e Julieta": "Mussarela, cream cheese e goiabada",
+            "Doce de leite": "Mussarela, doce de leite",
+            "Chocolate branco": "Mussarela, chocolate branco",
+            "Prestígio": "Mussarela, chocolate ao leite e coco ralado"
+        }
+    };
+
+    function mudarTipoPedido(tipo) {
+        tipoPedido = tipo;
+        document.getElementById('btn-entrega').classList.toggle('ativo', tipo === 'Entrega');
+        document.getElementById('btn-retirada').classList.toggle('ativo', tipo === 'Retirada');
+        document.getElementById('campo-endereco').style.display = tipo === 'Entrega' ? 'block' : 'none';
+        document.getElementById('taxa-info').innerText = tipo === 'Entrega' ? 'Taxa de entrega: R$ 7,00' : 'Retirada no local (Grátis)';
+        calcularTotal();
+    }
+
+    function toggleTroco() {
+        document.getElementById('campo-troco').style.display = document.getElementById('pagamento').value === 'Dinheiro' ? 'block' : 'none';
+    }
+
+    function gerarPizzas() {
+        const qtd = document.getElementById('quantidadePizzas').value;
+        const container = document.getElementById('pizzasContainer');
+        container.innerHTML = "";
+        let saborOptions = '<option value="">(Selecione)</option>';
+        for (let cat in menu) {
+            saborOptions += `<optgroup label="${cat}">`;
+            for (let s in menu[cat]) saborOptions += `<option value="${s}">${s}</option>`;
+            saborOptions += `</optgroup>`;
+        }
+        for (let i = 1; i <= qtd; i++) {
+            container.innerHTML += `
+                <div class="pizzaBox" id="box_${i}">
+                    <h4>🍕 PIZZA #${i}</h4>
+                    <select class="p-tam" onchange="calcularTotal()">
+                        <option value="M" data-p="39.99">Média (M) - R$ 39,99</option>
+                        <option value="G" data-p="49.99" selected>Grande (G) - R$ 49,99</option>
+                        <option value="EX" data-p="69.99">Extra G (EX) - R$ 69,99</option>
+                    </select>
+                    <label>Divisão de Sabores:</label>
+                    <div class="divisor-pizzas">
+                        <button class="btn-div ativo" onclick="ajustarSabores(${i}, 1, this)">Inteira</button>
+                        <button class="btn-div" onclick="ajustarSabores(${i}, 2, this)">Meia/Meia</button>
+                        <button class="btn-div" onclick="ajustarSabores(${i}, 3, this)">1/3</button>
+                    </div>
+                    <div id="sabores_area_${i}"><div class="sabor-box"><label>Sabor Único:</label><select class="s1" onchange="exibirIngredientes(this)">${saborOptions}</select><div class="desc-sabor"></div></div></div>
+                    <div class="borda-area">
+                        <label><input type="checkbox" class="b-check" onchange="calcularTotal()"> Borda Recheada (+ R$ 10,00)</label>
+                        <select class="b-tipo"><option>Catupiry</option><option>Cheddar</option><option>Chocolate</option><option>Mussarela</option><option>Doce de leite</option><option>Goiabada</option></select>
+                    </div>
+                </div>`;
+        }
+    }
+
+    function ajustarSabores(pId, qtd, btn) {
+        const botoes = btn.parentElement.querySelectorAll('.btn-div');
+        botoes.forEach(b => b.classList.remove('ativo')); btn.classList.add('ativo');
+        const area = document.getElementById(`sabores_area_${pId}`);
+        let saborOptions = '<option value="">(Selecione)</option>';
+        for (let cat in menu) { saborOptions += `<optgroup label="${cat}">`; for (let s in menu[cat]) saborOptions += `<option value="${s}">${s}</option>`; saborOptions += `</optgroup>`; }
+        area.innerHTML = "";
+        for (let j = 1; j <= qtd; j++) { area.innerHTML += `<div class="sabor-box"><label>Sabor ${j}:</label><select class="s${j}" onchange="exibirIngredientes(this)">${saborOptions}</select><div class="desc-sabor"></div></div>`; }
+    }
+
+    function exibirIngredientes(sel) {
+        const sabor = sel.value; const info = sel.nextElementSibling; let ing = "";
+        for (let cat in menu) { if (menu[cat][sabor]) ing = menu[cat][sabor]; }
+        if (ing) { info.innerHTML = "<i>" + ing + "</i>"; info.style.display = "block"; } else { info.style.display = "none"; }
+    }
+
+    function calcularTotal() {
+        let total = 0;
+        document.querySelectorAll('.pizzaBox').forEach(box => {
+            total += parseFloat(box.querySelector('.p-tam').selectedOptions[0].dataset.p);
+            if(box.querySelector('.b-check').checked) total += 10;
+        });
+        document.querySelectorAll('.refri').forEach(r => total += (parseInt(r.value) || 0) * parseFloat(r.dataset.p));
+        if(tipoPedido === 'Entrega') total += 7;
+        const pag = document.getElementById('pagamento').value;
+        if(pag === "Debito") total += 1; if(pag === "Credito") total += 2;
+        document.getElementById('txtTotal').innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
+        return total.toFixed(2);
+    }
+
+    function enviarPedido() {
+        const nome = document.getElementById('nome').value;
+        if(!nome) return alert("Seu nome?");
+        if(tipoPedido === 'Entrega' && !document.getElementById('endereco').value) return alert("Endereço?");
+        let corpo = `*PIZZARIA SANTOS*%0A*${tipoPedido.toUpperCase()}*%0A----------------------------%0A`;
+        document.querySelectorAll('.pizzaBox').forEach((box, i) => {
+            const tam = box.querySelector('.p-tam').value;
+            const s1 = box.querySelector('.s1').value;
+            if(!s1) return;
+            corpo += `*Pizza ${i+1} (${tam}):*%0A- ${s1}`;
+            if(box.querySelector('.s2')?.value) corpo += ` / ${box.querySelector('.s2').value}`;
+            if(box.querySelector('.s3')?.value) corpo += ` / ${box.querySelector('.s3').value}`;
+            if(box.querySelector('.b-check').checked) corpo += `%0A- Borda: ${box.querySelector('.b-tipo').value}`;
+            corpo += `%0A%0A`;
+        });
+        let refris = "";
+        document.querySelectorAll('.bebida-item').forEach(item => {
+            const qtd = item.querySelector('.refri').value;
+            if(qtd > 0) refris += `- ${qtd}x ${item.querySelector('.refri').dataset.n} (${item.querySelector('.refri-detalhe').value})%0A`;
+        });
+        if(refris) corpo += `*BEBIDAS:*%0A${refris}%0A`;
+        const troco = document.getElementById('troco').value;
+        const msg = `${corpo}----------------------------%0A*Pagamento:* ${document.getElementById('pagamento').value}${troco ? ' (Troco p/ '+troco+')' : ''}%0A*Cliente:* ${nome}%0A${tipoPedido === 'Entrega' ? '*End:* '+document.getElementById('endereco').value : '*RETIRADA*'}%0A*TOTAL: R$ ${calcularTotal()}*`;
+        window.open(`https://wa.me/5562994640704?text=${msg}`);
+    }
+
+    function verificarHorario() {
+        const h = new Date().getHours() + (new Date().getMinutes()/60);
+        const s = document.getElementById('status-loja');
+        if(h >= 18 && h <= 23.5) { s.innerHTML = "🟢 ABERTO (18h às 23:30h)"; s.className = "status-loja aberto"; }
+        else { s.innerHTML = "🔴 FECHADO (Abre às 18:00)"; s.className = "status-loja fechado"; }
+    }
+
+    gerarPizzas(); verificarHorario(); calcularTotal();
+</script>
+</body>
+</html>
