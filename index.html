@@ -15,6 +15,14 @@
         .header { text-align: center; margin-bottom: 20px; }
         .header img { max-width: 110px; border-radius: 50%; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
         .header h1 { color: var(--vermelho); margin: 10px 0 0; }
+        
+        /* Cartão Fidelidade */
+        .fidelidade-box { background: white; border-radius: 15px; padding: 15px; margin: 15px 0; border: 2px dashed var(--verde); text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .fidelidade-box h3 { margin: 0 0 10px; font-size: 16px; color: var(--verde); }
+        .pizza-icons { font-size: 22px; letter-spacing: 5px; margin: 10px 0; }
+        .pizza-off { filter: grayscale(100%); opacity: 0.2; }
+        .status-txt { font-size: 12px; font-weight: bold; color: #555; }
+
         .section-title { background: var(--verde); color: white; padding: 10px; border-radius: 8px; margin: 20px 0 10px; font-size: 13px; font-weight: bold; text-transform: uppercase; }
         .entrega-options { display: flex; gap: 8px; }
         .btn-tipo { flex: 1; padding: 15px; border: 2px solid #ddd; border-radius: 12px; background: white; font-weight: bold; cursor: pointer; }
@@ -27,9 +35,11 @@
         .sabor-box label { font-size: 12px; font-weight: bold; color: #666; display: block; margin-bottom: 4px; }
         .desc-sabor { background: #fff9e6; font-size: 11px; color: #555; padding: 6px; border-radius: 6px; margin: 4px 0 8px; display: none; border-left: 3px solid var(--vermelho); }
         .borda-area { background: #f0fdf4; padding: 12px; border-radius: 10px; margin-top: 15px; border: 1px dashed var(--verde); }
+        
         .bebida-item { background: white; padding: 10px; margin-bottom: 8px; border-radius: 10px; border: 1px solid #ddd; }
         .bebida-flex { display: flex; justify-content: space-between; align-items: center; }
         .bebida-item input { width: 55px; text-align: center; padding: 8px; }
+        
         select, input, textarea { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ccc; font-size: 16px; box-sizing: border-box; margin-bottom: 10px; }
         .footer-total { position: fixed; bottom: 0; left: 0; right: 0; background: white; padding: 15px; box-shadow: 0 -5px 15px rgba(0,0,0,0.1); z-index: 1000; }
         .btn-enviar { background: #25d366; color: white; border: none; width: 100%; max-width: 500px; padding: 18px; border-radius: 50px; font-size: 18px; font-weight: bold; display: flex; justify-content: space-between; margin: 0 auto; cursor: pointer; }
@@ -43,8 +53,14 @@
 
 <div class="container">
     <div class="header">
-        <img src="Logo.png" alt="Pizzaria Santos" onerror="this.src='https://cdn-icons-png.flaticon.com/512/5973/5973307.png'">
+        <img src="logo.png" alt="Pizzaria Santos" onerror="this.src='https://cdn-icons-png.flaticon.com/512/5973/5973307.png'">
         <h1>Pizzaria Santos</h1>
+    </div>
+
+    <div class="fidelidade-box">
+        <h3>🍕 Cartão Fidelidade</h3>
+        <div id="pizza-icons" class="pizza-icons"></div>
+        <div id="status-txt" class="status-txt">Peça 10 pizzas e ganhe a próxima!</div>
     </div>
 
     <div class="section-title">🛵 Entrega ou Retirada?</div>
@@ -59,9 +75,15 @@
     <div id="pizzasContainer"></div>
 
     <div class="section-title">🥤 2. Bebidas</div>
+    
     <div class="bebida-item">
         <div class="bebida-flex"><span>Coca-Cola 2L (R$ 13)</span><input type="number" class="refri" data-n="Coca-Cola 2L" data-p="13" value="0" min="0" onchange="calcularTotal()"></div>
         <select class="refri-detalhe"><option>Tradicional</option><option>Sem Açúcar</option></select>
+    </div>
+
+    <div class="bebida-item">
+        <div class="bebida-flex"><span>Suco La Fruit 1L (R$ 8)</span><input type="number" class="refri" data-n="Suco La Fruit 1L" data-p="8" value="0" min="0" onchange="calcularTotal()"></div>
+        <select class="refri-detalhe"><option>Sabor Uva</option></select>
     </div>
 
     <div class="bebida-item">
@@ -97,6 +119,8 @@
 
 <script>
     let tipoPedido = 'Entrega';
+    let acumuladoFidelidade = parseInt(localStorage.getItem('fidelidadePizzariaSantos')) || 0;
+
     const menu = {
         "Tradicionais": {
             "À Moda da Casa ⭐": "Mussarela, presunto, calabresa, frango, milho, tomate e bacon",
@@ -130,6 +154,22 @@
         }
     };
 
+    function atualizarVisualFidelidade() {
+        const container = document.getElementById('pizza-icons');
+        const statusTxt = document.getElementById('status-txt');
+        container.innerHTML = '';
+        let mostrarContagem = acumuladoFidelidade > 10 ? 10 : acumuladoFidelidade;
+        for (let i = 1; i <= 10; i++) {
+            container.innerHTML += i <= mostrarContagem ? '<span>🍕</span>' : '<span class="pizza-off">🍕</span>';
+        }
+        if (acumuladoFidelidade >= 10) {
+            statusTxt.innerHTML = "🏆 PARABÉNS! Você ganhou uma pizza GRÁTIS!";
+            statusTxt.style.color = "green";
+        } else {
+            statusTxt.innerHTML = `Você já tem ${acumuladoFidelidade} pizzas. Faltam ${10 - acumuladoFidelidade}!`;
+        }
+    }
+
     function mudarTipoPedido(tipo) {
         tipoPedido = tipo;
         document.getElementById('btn-entrega').classList.toggle('ativo', tipo === 'Entrega');
@@ -155,7 +195,7 @@
         }
         for (let i = 1; i <= qtd; i++) {
             container.innerHTML += `
-                <div class="pizzaBox" id="box_${i}">
+                <div class="pizzaBox">
                     <h4>🍕 PIZZA #${i}</h4>
                     <select class="p-tam" onchange="calcularTotal()">
                         <option value="M" data-p="39.99">Média (M) - R$ 39,99</option>
@@ -203,6 +243,12 @@
         if(tipoPedido === 'Entrega') total += 7;
         const pag = document.getElementById('pagamento').value;
         if(pag === "Debito") total += 1; if(pag === "Credito") total += 2;
+        
+        if (acumuladoFidelidade >= 10) {
+            total -= 49.99; 
+            if (total < 0) total = 0;
+        }
+
         document.getElementById('txtTotal').innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
         return total.toFixed(2);
     }
@@ -211,7 +257,10 @@
         const nome = document.getElementById('nome').value;
         if(!nome) return alert("Seu nome?");
         if(tipoPedido === 'Entrega' && !document.getElementById('endereco').value) return alert("Endereço?");
+        
+        let qtdPizzasNoPedido = parseInt(document.getElementById('quantidadePizzas').value);
         let corpo = `*PIZZARIA SANTOS*%0A*${tipoPedido.toUpperCase()}*%0A----------------------------%0A`;
+        
         document.querySelectorAll('.pizzaBox').forEach((box, i) => {
             const tam = box.querySelector('.p-tam').value;
             const s1 = box.querySelector('.s1').value;
@@ -222,15 +271,29 @@
             if(box.querySelector('.b-check').checked) corpo += `%0A- Borda: ${box.querySelector('.b-tipo').value}`;
             corpo += `%0A%0A`;
         });
+
         let refris = "";
         document.querySelectorAll('.bebida-item').forEach(item => {
             const qtd = item.querySelector('.refri').value;
             if(qtd > 0) refris += `- ${qtd}x ${item.querySelector('.refri').dataset.n} (${item.querySelector('.refri-detalhe').value})%0A`;
         });
         if(refris) corpo += `*BEBIDAS:*%0A${refris}%0A`;
+
+        let infoFidelidade = "";
+        if (acumuladoFidelidade >= 10) {
+            infoFidelidade = `%0A🎁 *ESTE É MEU PEDIDO DE BRINDE!*%0A(10 pizzas completadas anteriormente)`;
+            localStorage.setItem('fidelidadePizzariaSantos', 0); 
+        } else {
+            let novoTotal = acumuladoFidelidade + qtdPizzasNoPedido;
+            infoFidelidade = `%0A📊 *CONTROLE FIDELIDADE:*%0AAnterior: ${acumuladoFidelidade} | Hoje: ${qtdPizzasNoPedido}%0A*Novo Total: ${novoTotal}/10*`;
+            localStorage.setItem('fidelidadePizzariaSantos', novoTotal);
+        }
+
         const troco = document.getElementById('troco').value;
-        const msg = `${corpo}----------------------------%0A*Pagamento:* ${document.getElementById('pagamento').value}${troco ? ' (Troco p/ '+troco+')' : ''}%0A*Cliente:* ${nome}%0A${tipoPedido === 'Entrega' ? '*End:* '+document.getElementById('endereco').value : '*RETIRADA*'}%0A*TOTAL: R$ ${calcularTotal()}*`;
+        const msg = `${corpo}----------------------------${infoFidelidade}%0A----------------------------%0A*Pagamento:* ${document.getElementById('pagamento').value}${troco ? ' (Troco p/ '+troco+')' : ''}%0A*Cliente:* ${nome}%0A${tipoPedido === 'Entrega' ? '*End:* '+document.getElementById('endereco').value : '*RETIRADA*'}%0A*TOTAL: R$ ${calcularTotal()}*`;
+        
         window.open(`https://wa.me/5562994640704?text=${msg}`);
+        setTimeout(() => { location.reload(); }, 1000);
     }
 
     function verificarHorario() {
@@ -240,8 +303,10 @@
         else { s.innerHTML = "🔴 FECHADO (Abre às 18:00)"; s.className = "status-loja fechado"; }
     }
 
-    gerarPizzas(); verificarHorario(); calcularTotal();
+    gerarPizzas(); 
+    verificarHorario(); 
+    atualizarVisualFidelidade();
+    calcularTotal();
 </script>
 </body>
-
 </html>
