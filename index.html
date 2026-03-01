@@ -16,7 +16,6 @@
         .header img { max-width: 110px; border-radius: 50%; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
         .header h1 { color: var(--vermelho); margin: 10px 0 0; }
         
-        /* Cartão Fidelidade */
         .fidelidade-box { background: white; border-radius: 15px; padding: 15px; margin: 15px 0; border: 2px dashed var(--verde); text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
         .fidelidade-box h3 { margin: 0 0 10px; font-size: 16px; color: var(--verde); }
         .pizza-icons { font-size: 22px; letter-spacing: 5px; margin: 10px 0; }
@@ -43,7 +42,7 @@
         select, input, textarea { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ccc; font-size: 16px; box-sizing: border-box; margin-bottom: 10px; }
         .footer-total { position: fixed; bottom: 0; left: 0; right: 0; background: white; padding: 15px; box-shadow: 0 -5px 15px rgba(0,0,0,0.1); z-index: 1000; }
         .btn-enviar { background: #25d366; color: white; border: none; width: 100%; max-width: 500px; padding: 18px; border-radius: 50px; font-size: 18px; font-weight: bold; display: flex; justify-content: space-between; margin: 0 auto; cursor: pointer; }
-        #campo-troco { display: none; }
+        #campo-troco, #campo-bandeira { display: none; }
     </style>
 </head>
 <body>
@@ -94,12 +93,22 @@
     </div>
 
     <div class="section-title">💳 3. Pagamento</div>
-    <select id="pagamento" onchange="toggleTroco(); calcularTotal();">
+    <select id="pagamento" onchange="togglePagamento(); calcularTotal();">
         <option value="Pix">Pix</option>
         <option value="Dinheiro">Dinheiro</option>
-        <option value="Debito">Débito (+ R$ 1,00)</option>
-        <option value="Credito">Crédito (+ R$ 2,00)</option>
+        <option value="Debito">Débito (+ R$ 1,50)</option>
+        <option value="Credito">Crédito (+ R$ 3,00)</option>
     </select>
+    
+    <div id="campo-bandeira">
+        <label style="font-size: 12px; font-weight: bold; color: #666;">Selecione a Bandeira:</label>
+        <select id="bandeira-cartao" onchange="calcularTotal()">
+            <option value="Visa">Visa</option>
+            <option value="Master">Mastercard</option>
+            <option value="Elo">Elo (+ R$ 3,00 de taxa)</option>
+        </select>
+    </div>
+
     <div id="campo-troco"><input type="text" id="troco" placeholder="Troco para quanto?"></div>
 
     <div class="section-title">📍 4. Dados</div>
@@ -133,6 +142,8 @@
             "Americana": "Mussarela, presunto, bacon, ovo e orégano"
         },
         "Especiais": {
+            "Pizza de Doritos 🆕": "Mussarela, Frango, Cheddar, Bacon, Doritos e Oregano",
+            "Bacon Smash 🆕": "mussarela, bacon, cebola Roxa, Cheddar e Oregano",
             "Bacon Especial ⭐": "Mussarela, bacon, catupiry e orégano",
             "Calabresa Especial ⭐": "Mussarela, calabresa, cheddar, bacon e orégano",
             "Frango Especial ⭐": "Mussarela, frango, cheddar, bacon e orégano",
@@ -179,8 +190,10 @@
         calcularTotal();
     }
 
-    function toggleTroco() {
-        document.getElementById('campo-troco').style.display = document.getElementById('pagamento').value === 'Dinheiro' ? 'block' : 'none';
+    function togglePagamento() {
+        const met = document.getElementById('pagamento').value;
+        document.getElementById('campo-troco').style.display = met === 'Dinheiro' ? 'block' : 'none';
+        document.getElementById('campo-bandeira').style.display = (met === 'Debito' || met === 'Credito') ? 'block' : 'none';
     }
 
     function gerarPizzas() {
@@ -195,9 +208,9 @@
         }
         for (let i = 1; i <= qtd; i++) {
             container.innerHTML += `
-                <div class="pizzaBox">
+                <div class="pizzaBox" id="pizza-card-${i}">
                     <h4>🍕 PIZZA #${i}</h4>
-                    <select class="p-tam" onchange="calcularTotal()">
+                    <select class="p-tam" onchange="validarTamanho(${i}); calcularTotal();">
                         <option value="M" data-p="39.99">Média (M) - R$ 39,99</option>
                         <option value="G" data-p="49.99" selected>Grande (G) - R$ 49,99</option>
                         <option value="EX" data-p="69.99">Extra G (EX) - R$ 69,99</option>
@@ -206,14 +219,40 @@
                     <div class="divisor-pizzas">
                         <button class="btn-div ativo" onclick="ajustarSabores(${i}, 1, this)">Inteira</button>
                         <button class="btn-div" onclick="ajustarSabores(${i}, 2, this)">Meia/Meia</button>
-                        <button class="btn-div" onclick="ajustarSabores(${i}, 3, this)">1/3</button>
+                        <button class="btn-div btn-terco" onclick="ajustarSabores(${i}, 3, this)">1/3</button>
                     </div>
                     <div id="sabores_area_${i}"><div class="sabor-box"><label>Sabor Único:</label><select class="s1" onchange="exibirIngredientes(this)">${saborOptions}</select><div class="desc-sabor"></div></div></div>
                     <div class="borda-area">
-                        <label><input type="checkbox" class="b-check" onchange="calcularTotal()"> Borda Recheada (+ R$ 10,00)</label>
+                        <label><input type="checkbox" class="b-check" onchange="calcularTotal()"> Borda Recheada <span class="borda-preco">(+ R$ 10,00)</span></label>
                         <select class="b-tipo"><option>Catupiry</option><option>Cheddar</option><option>Chocolate</option><option>Mussarela</option><option>Doce de leite</option><option>Goiabada</option></select>
                     </div>
                 </div>`;
+            validarTamanho(i);
+        }
+    }
+
+    function validarTamanho(pId) {
+        const card = document.getElementById(`pizza-card-${pId}`);
+        const tam = card.querySelector('.p-tam').value;
+        const btnTerco = card.querySelector('.btn-terco');
+        const precoBordaTxt = card.querySelector('.borda-preco');
+
+        // Regra Borda Extra Grande
+        if(tam === 'EX') {
+            precoBordaTxt.innerText = "(+ R$ 13,00)";
+        } else {
+            precoBordaTxt.innerText = "(+ R$ 10,00)";
+        }
+
+        // Regra Pizza M - Máximo 2 sabores
+        if(tam === 'M') {
+            btnTerco.style.display = 'none';
+            // Se estiver em 1/3, volta para inteira
+            if(btnTerco.classList.contains('ativo')) {
+                ajustarSabores(pId, 1, card.querySelector('.btn-div'));
+            }
+        } else {
+            btnTerco.style.display = 'block';
         }
     }
 
@@ -236,13 +275,29 @@
     function calcularTotal() {
         let total = 0;
         document.querySelectorAll('.pizzaBox').forEach(box => {
+            const tam = box.querySelector('.p-tam').value;
             total += parseFloat(box.querySelector('.p-tam').selectedOptions[0].dataset.p);
-            if(box.querySelector('.b-check').checked) total += 10;
+            
+            if(box.querySelector('.b-check').checked) {
+                total += (tam === 'EX') ? 13 : 10;
+            }
         });
+
         document.querySelectorAll('.refri').forEach(r => total += (parseInt(r.value) || 0) * parseFloat(r.dataset.p));
+        
         if(tipoPedido === 'Entrega') total += 7;
+        
         const pag = document.getElementById('pagamento').value;
-        if(pag === "Debito") total += 1; if(pag === "Credito") total += 2;
+        const bandeira = document.getElementById('bandeira-cartao').value;
+
+        // Novas taxas de cartão
+        if(pag === "Debito") total += 1.50; 
+        if(pag === "Credito") total += 3.00;
+        
+        // Taxa ELO
+        if((pag === "Debito" || pag === "Credito") && bandeira === "Elo") {
+            total += 3.00;
+        }
         
         if (acumuladoFidelidade >= 10) {
             total -= 49.99; 
@@ -289,8 +344,14 @@
             localStorage.setItem('fidelidadePizzariaSantos', novoTotal);
         }
 
+        const pag = document.getElementById('pagamento').value;
+        const bandeira = document.getElementById('bandeira-cartao').value;
         const troco = document.getElementById('troco').value;
-        const msg = `${corpo}----------------------------${infoFidelidade}%0A----------------------------%0A*Pagamento:* ${document.getElementById('pagamento').value}${troco ? ' (Troco p/ '+troco+')' : ''}%0A*Cliente:* ${nome}%0A${tipoPedido === 'Entrega' ? '*End:* '+document.getElementById('endereco').value : '*RETIRADA*'}%0A*TOTAL: R$ ${calcularTotal()}*`;
+        
+        let infoPagamento = pag;
+        if(pag === 'Debito' || pag === 'Credito') infoPagamento += ` (${bandeira})`;
+
+        const msg = `${corpo}----------------------------${infoFidelidade}%0A----------------------------%0A*Pagamento:* ${infoPagamento}${troco ? ' (Troco p/ '+troco+')' : ''}%0A*Cliente:* ${nome}%0A${tipoPedido === 'Entrega' ? '*End:* '+document.getElementById('endereco').value : '*RETIRADA*'}%0A*TOTAL: R$ ${calcularTotal()}*`;
         
         window.open(`https://wa.me/5562994640704?text=${msg}`);
         setTimeout(() => { location.reload(); }, 1000);
